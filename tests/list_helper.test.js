@@ -21,7 +21,7 @@ const manyBlogsList = [
     {
         _id: '6536503b7620fa0d2cc5d82e',
         title: 'My first Blog!',
-        author: 'Tero A.',
+        author: 'Tero K.',
         url: 'https://coolblogs.dev/1',
         likes: 0,
         __v: 0,
@@ -29,7 +29,7 @@ const manyBlogsList = [
     {
         _id: '6536508d7620fa0d2cc5d831',
         title: 'My second Blog!',
-        author: 'Tero B.',
+        author: 'Tero K.',
         url: 'https://coolblogs.dev/2',
         likes: 4,
         __v: 0,
@@ -37,7 +37,7 @@ const manyBlogsList = [
     {
         _id: '65365557eec0b4d41e3864ab',
         title: 'My cool Blog',
-        author: 'Tero C.',
+        author: 'Tero K.',
         url: 'https://coolblogs.dev/3',
         likes: 21,
         __v: 0,
@@ -45,7 +45,7 @@ const manyBlogsList = [
     {
         _id: '6536577b6ae3ad55f179ff19',
         title: 'My melancholy Blog',
-        author: 'Tero D.',
+        author: 'Tero E.',
         url: 'https://coolblogs.dev/4',
         likes: 18,
         __v: 0,
@@ -92,6 +92,26 @@ describe('favorite blog', () => {
             title: 'My FSO Blog',
             author: 'Tero E.',
             likes: 26,
+        });
+    });
+});
+
+describe('most blogs', () => {
+    test('should return undefined with empty blog list', () => {
+        expect(listHelper.mostBlogs(emptyBlobList)).toEqual({});
+    });
+
+    test('should return the only author from one blog list', () => {
+        expect(listHelper.mostBlogs(oneBlogList)).toEqual({
+            author: 'Tero K.',
+            blogs: 1,
+        });
+    });
+
+    test('should correctly return author with most blogs from many', () => {
+        expect(listHelper.mostBlogs(manyBlogsList)).toEqual({
+            author: 'Tero K.',
+            blogs: 3,
         });
     });
 });
