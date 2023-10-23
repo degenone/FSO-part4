@@ -7,6 +7,8 @@ const middleware = require('./utils/middleware');
 const blogsRouter = require('./controllers/blogs');
 const mongoose = require('mongoose');
 
+mongoose.set('strictQuery', false);
+
 logger.info('connecting to', config.MONGODB_URL.substring(0, 26));
 
 mongoose
