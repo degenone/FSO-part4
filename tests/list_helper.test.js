@@ -97,7 +97,7 @@ describe('favorite blog', () => {
 });
 
 describe('most blogs', () => {
-    test('should return undefined with empty blog list', () => {
+    test('should return empty with empty blog list', () => {
         expect(listHelper.mostBlogs(emptyBlobList)).toEqual({});
     });
 
@@ -112,6 +112,26 @@ describe('most blogs', () => {
         expect(listHelper.mostBlogs(manyBlogsList)).toEqual({
             author: 'Tero K.',
             blogs: 3,
+        });
+    });
+});
+
+describe('most likes', () => {
+    test('should return empty with empty blog list', () => {
+        expect(listHelper.mostLikes(emptyBlobList)).toEqual({});
+    });
+
+    test('should return the only author with likes from one blog list', () => {
+        expect(listHelper.mostLikes(oneBlogList)).toEqual({
+            author: 'Tero K.',
+            likes: 0,
+        });
+    });
+
+    test('should correctly return author with most likes from many', () => {
+        expect(listHelper.mostLikes(manyBlogsList)).toEqual({
+            author: 'Tero E.',
+            likes: 44,
         });
     });
 });
