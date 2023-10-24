@@ -37,4 +37,26 @@ describe('blogs api GET method tests', () => {
     });
 });
 
+describe('blogs api POST method tests', () => {
+    const newBlog = {
+        author: 'Mr. Tester',
+        title: 'The importance of thorough testing',
+        url: 'https://cooltestblogs.dev/',
+        likes: 11,
+    };
+
+    test('should save a new blog correctly', async () => {
+        const blogsBeforeAct = await testHelper.getBlogsInDb();
+        const result = await api
+            .post('/api/blogs')
+            .send(newBlog)
+            .expect(201)
+            .expect('Content-Type', /application\/json/);
+        const blogsAfterAct = await testHelper.getBlogsInDb();
+        expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length + 1);
+        const titles = blogsAfterAct.map((b) => b.title);
+        expect(titles).toContain(newBlog.title);
+    });
+});
+
 afterAll(async () => await mongoose.connection.close());
