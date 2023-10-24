@@ -44,10 +44,15 @@ describe('blogs api POST method tests', () => {
         url: 'https://cooltestblogs.dev/',
         likes: 11,
     };
+    const newNoLikesBlog = {
+        author: 'Mr. Tester',
+        title: 'The importance of thorough testing',
+        url: 'https://cooltestblogs.dev/',
+    };
 
     test('should save a new blog correctly', async () => {
         const blogsBeforeAct = await testHelper.getBlogsInDb();
-        const result = await api
+        await api
             .post('/api/blogs')
             .send(newBlog)
             .expect(201)
@@ -56,6 +61,16 @@ describe('blogs api POST method tests', () => {
         expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length + 1);
         const titles = blogsAfterAct.map((b) => b.title);
         expect(titles).toContain(newBlog.title);
+    });
+
+    test('should create a new blog without likes', async () => {
+        const result = await api
+            .post('/api/blogs')
+            .send(newNoLikesBlog)
+            .expect(201)
+            .expect('Content-Type', /application\/json/);
+        expect(result.body.likes).toBeDefined();
+        expect(result.body.likes).toBe(0);
     });
 });
 
