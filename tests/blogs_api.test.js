@@ -49,8 +49,18 @@ describe('blogs api POST method tests', () => {
         title: 'The importance of thorough testing',
         url: 'https://cooltestblogs.dev/',
     };
+    const newNoTitleBlog = {
+        author: 'Mr. Tester',
+        url: 'https://cooltestblogs.dev/',
+        likes: 11,
+    };
+    const newNoUrlBlog = {
+        author: 'Mr. Tester',
+        title: 'The importance of thorough testing',
+        likes: 11,
+    };
 
-    test('should save a new blog correctly', async () => {
+    test('should create a new blog correctly', async () => {
         const blogsBeforeAct = await testHelper.getBlogsInDb();
         await api
             .post('/api/blogs')
@@ -71,6 +81,14 @@ describe('blogs api POST method tests', () => {
             .expect('Content-Type', /application\/json/);
         expect(result.body.likes).toBeDefined();
         expect(result.body.likes).toBe(0);
+    });
+
+    test('should not create a blog without title', async () => {
+        await api.post('/api/blogs').send(newNoTitleBlog).expect(400);
+    });
+
+    test('should not create a blog without ulr', async () => {
+        await api.post('/api/blogs').send(newNoUrlBlog).expect(400);
     });
 });
 
