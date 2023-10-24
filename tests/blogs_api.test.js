@@ -114,4 +114,60 @@ describe('blog api DELETE method tests', () => {
     });
 });
 
+describe('blog api PUT method tests', () => {
+    describe('successful updates', () => {
+        test('should update blog likes', async () => {
+            const blogs = await testHelper.getBlogsInDb();
+            const blogBeforeAct = blogs[0];
+            const updatedLikes = { likes: 420 };
+            const updatedBlog = await api
+                .put(`/api/blogs/${blogBeforeAct.id}`)
+                .send(updatedLikes)
+                .expect(200);
+            expect(updatedBlog.body.likes).toEqual(updatedLikes.likes);
+        });
+
+        test('should update blog title', async () => {
+            const blogs = await testHelper.getBlogsInDb();
+            const blogBeforeAct = blogs[0];
+            const updatedTitle = { title: 'Updated blog title.' };
+            const updatedBlog = await api
+                .put(`/api/blogs/${blogBeforeAct.id}`)
+                .send(updatedTitle)
+                .expect(200);
+            expect(updatedBlog.body.title).toEqual(updatedTitle.title);
+        });
+    });
+
+    describe('unsuccessful updates', () => {
+        test('should fail updating blog author', async () => {
+            const blogs = await testHelper.getBlogsInDb();
+            const blogBeforeAct = blogs[0];
+            const updatedAuthor = { author: 'Updated blog author.' };
+            await api
+                .put(`/api/blogs/${blogBeforeAct.id}`)
+                .send(updatedAuthor)
+                .expect(400);
+        });
+
+        test('should fail updating blog likes with non-existing id', async () => {
+            const nonExistingId = await testHelper.getNonExistingId();
+            const updatedLikes = { likes: 420 };
+            await api
+                .put(`/api/blogs/${nonExistingId}`)
+                .send(updatedLikes)
+                .expect(404);
+        });
+
+        test('should fail updating blog likes with invalid id', async () => {
+            const invalidId = 'invalidId';
+            const updatedLikes = { likes: 420 };
+            await api
+                .put(`/api/blogs/${invalidId}`)
+                .send(updatedLikes)
+                .expect(400);
+        });
+    });
+});
+
 afterAll(async () => await mongoose.connection.close());
