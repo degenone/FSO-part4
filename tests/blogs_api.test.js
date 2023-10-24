@@ -87,8 +87,30 @@ describe('blogs api POST method tests', () => {
         await api.post('/api/blogs').send(newNoTitleBlog).expect(400);
     });
 
-    test('should not create a blog without ulr', async () => {
+    test('should not create a blog without url', async () => {
         await api.post('/api/blogs').send(newNoUrlBlog).expect(400);
+    });
+});
+
+describe('blog api DELETE method tests', () => {
+    test('should delete blog with valid id', async () => {
+        const blogsBeforeAct = await testHelper.getBlogsInDb();
+        const deleteBlog = blogsBeforeAct[0];
+        await api.delete(`/api/blogs/${deleteBlog.id}`).expect(204);
+        const blogsAfterAct = await testHelper.getBlogsInDb();
+        expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length - 1);
+        const ids = blogsAfterAct.map((b) => b.id);
+        expect(ids).not.toContain(deleteBlog.id);
+    });
+
+    test('should fail with 404 deleting with non-existing id', async () => {
+        const nonExistingId = await testHelper.getNonExistingId();
+        await api.delete(`/api/blogs/${nonExistingId}`).expect(404);
+    });
+
+    test('should fail with 400 deleting with invalid id', async () => {
+        const invalidId = 'invalidId';
+        await api.delete(`/api/blogs/${invalidId}`).expect(400);
     });
 });
 

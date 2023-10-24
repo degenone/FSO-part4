@@ -1,4 +1,5 @@
 const morgan = require('morgan');
+const { info } = require('./logger');
 
 morgan.token('body', (request) => {
     const body = JSON.stringify(request.body);
@@ -8,4 +9,15 @@ morgan.token('body', (request) => {
 const requestLogger = () =>
     morgan(':method :url :status :response-time ms :body');
 
-module.exports = { requestLogger };
+const errorHandler = (e, req, res, next) => {
+    info('name:', e.name);
+    if (e.name === 'CastError') {
+        return res.status(400).json({ error: 'malformed id' });
+    }
+    next(e);
+};
+
+module.exports = {
+    requestLogger,
+    errorHandler,
+};
