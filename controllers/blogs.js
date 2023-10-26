@@ -1,7 +1,9 @@
 const blogsRouter = require('express').Router();
+const jwt = require('jsonwebtoken');
 require('express-async-errors');
 const Blog = require('../models/blog');
 const User = require('../models/user');
+const getTokenFrom = require('../utils/tokenHelper');
 
 blogsRouter.get('/', async (req, res) => {
     const blogs = await Blog.find({}).populate('user', {
@@ -13,12 +15,17 @@ blogsRouter.get('/', async (req, res) => {
 });
 
 blogsRouter.post('/', async (req, res, next) => {
+    const token = jwt.verify(getTokenFrom(req), process.env.SECRET);
+    if (!token.id) {
+        return res.status(401).json({ error: 'invalid token' });
+    }
     const body = req.body;
     if (!body.title || !body.url) {
-        return res.status(400).end();
+        return res
+            .status(400)
+            .json({ error: 'required properties missing: title, url' });
     }
-    const users = await User.find({});
-    const user = users[Math.floor(Math.random() * users.length)];
+    const user = await User.findById(token.id);
     const blog = new Blog({
         author: body.author,
         user: user._id,
