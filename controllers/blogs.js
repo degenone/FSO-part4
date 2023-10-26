@@ -44,7 +44,7 @@ blogsRouter.put('/:id', async (req, res, next) => {
     if (updatedBlog) {
         res.json(updatedBlog);
     } else {
-        res.send(404).end();
+        res.status(404).end();
     }
 });
 

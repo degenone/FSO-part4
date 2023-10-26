@@ -1,6 +1,7 @@
 const usersRouter = require('express').Router();
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
+const passwordValidation = require('../utils/passwordValidation');
 
 usersRouter.get('/', async (req, res, next) => {
     const users = await User.find({});
@@ -9,6 +10,9 @@ usersRouter.get('/', async (req, res, next) => {
 
 usersRouter.post('/', async (req, res, next) => {
     const { username, name, password } = req.body;
+    if (!passwordValidation.validate(password)) {
+        res.status(400).json({ error: passwordValidation.passwordError });
+    }
     const passwordHash = await bcrypt.hash(password, 10);
     const user = new User({
         username,

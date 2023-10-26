@@ -15,6 +15,8 @@ const errorHandler = (e, req, res, next) => {
     info('name:', e.name);
     if (e.name === 'CastError') {
         return res.status(400).json({ error: 'malformed id' });
+    } else if (e.name === 'ValidationError') {
+        return res.status(400).json({ error: e.message });
     }
     next(e);
 };
