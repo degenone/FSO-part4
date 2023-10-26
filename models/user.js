@@ -14,6 +14,12 @@ const userScema = new mongoose.Schema({
     },
     name: String,
     passwordHash: String,
+    blogs: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Blog',
+        },
+    ],
 });
 userScema.set('toJSON', {
     transform: (doc, returnObj) => {
