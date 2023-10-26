@@ -6,6 +6,7 @@ const logger = require('./utils/logger');
 const middleware = require('./utils/middleware');
 const blogsRouter = require('./controllers/blogs');
 const mongoose = require('mongoose');
+const usersRouter = require('./controllers/users');
 
 mongoose.set('strictQuery', false);
 
@@ -23,6 +24,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 app.use('/api/blogs', blogsRouter);
+app.use('/api/users', usersRouter);
 
 app.use(middleware.errorHandler);
 

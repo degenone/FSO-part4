@@ -2,8 +2,10 @@ const morgan = require('morgan');
 const { info } = require('./logger');
 
 morgan.token('body', (request) => {
-    const body = JSON.stringify(request.body);
-    return body !== '{}' ? body : '-';
+    const body = request.body;
+    delete body.password;
+    const bodyString = JSON.stringify(body);
+    return bodyString !== '{}' ? bodyString : '-';
 });
 
 const requestLogger = () =>

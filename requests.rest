@@ -4,8 +4,19 @@ POST http://localhost:3003/api/blogs/ HTTP/1.1
 Content-Type: application/json
 
 {
-    "title": "My FSO Blog",
+    "title": "My Test Blog",
     "author": "Tero Kilpeläinen",
-    "url": "https://coolblogs.dev/5",
-    "likes": 30
+    "url": "https://coolblogs.dev/6",
+    "likes": 12
 }
+###
+POST http://localhost:3003/api/users/ HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "name": "Test User",
+    "password": "salasanA|123"
+}
+###
+GET http://localhost:3003/api/users/ HTTP/1.1
