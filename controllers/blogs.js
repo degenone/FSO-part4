@@ -49,16 +49,17 @@ blogsRouter.put('/:id', async (req, res, next) => {
     if (!likes && !title) {
         return res.status(400).end();
     }
-    const updatedBlog = await Blog.findByIdAndUpdate(
-        req.params.id,
-        { likes, title },
-        { new: true }
-    );
-    if (updatedBlog) {
-        res.json(updatedBlog);
-    } else {
-        res.status(404).end();
+    const blogToUpdate = await Blog.findById(req.params.id);
+    if (!blogToUpdate) {
+        return res.status(404).end();
     }
+    if (blogToUpdate.user.toString() !== req.user._id.toString()) {
+        return res.status(403).end();
+    }
+    blogToUpdate.title = title;
+    blogToUpdate.likes = likes;
+    await blogToUpdate.save();
+    res.json(blogToUpdate);
 });
 
 module.exports = blogsRouter;

@@ -32,8 +32,8 @@ const tokenHelper = (req) => {
     if (auth && auth.startsWith('Bearer ')) {
         return auth.replace('Bearer ', '');
     }
-    return null
-}
+    return null;
+};
 
 const tokenExtractor = (req, res, next) => {
     req.token = tokenHelper(req);
@@ -41,8 +41,8 @@ const tokenExtractor = (req, res, next) => {
 };
 
 const userExtractor = async (req, res, next) => {
-    const token = tokenHelper(req);
-    if (token !== null) {
+    if (req.method !== 'GET') {
+        const token = tokenHelper(req);
         const decodedToken = jwt.verify(token, process.env.SECRET);
         if (!decodedToken.id) {
             return res.status(401).json({ error: 'invalid token' });
@@ -50,7 +50,7 @@ const userExtractor = async (req, res, next) => {
         req.user = await User.findById(decodedToken.id);
     }
     next();
-}
+};
 
 module.exports = {
     requestLogger,

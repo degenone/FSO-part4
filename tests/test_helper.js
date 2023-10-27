@@ -28,11 +28,18 @@ const initialBlogs = [
     },
 ];
 
-const testUser = {
-    username: 'testuser',
-    name: 'Test User',
-    password: 'passwOrd*123',
-};
+const testUsers = [
+    {
+        username: 'testuser1',
+        name: 'Test User One',
+        password: 'pa$swOrd*123',
+    },
+    {
+        username: 'testuser2',
+        name: 'Test User Two',
+        password: 'pa$swOrd*456',
+    },
+];
 
 const getBlogsInDb = async () => {
     const blogs = await Blog.find({});
@@ -56,7 +63,7 @@ const getNonExistingId = async () => {
 
 module.exports = {
     initialBlogs,
-    testUser,
+    testUsers,
     getBlogsInDb,
     getUsersInDb,
     getNonExistingId,

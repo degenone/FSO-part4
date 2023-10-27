@@ -8,9 +8,64 @@ const User = require('../models/user');
 const api = supertest(app);
 
 describe('/api/blogs/ -route tests', () => {
+    let token = '';
+    beforeAll(async () => {
+        await User.deleteMany({});
+        // const newUsers = [];
+        // for (const u of testHelper.testUsers) {
+        //     newUsers.push({
+        //         username: u.username,
+        //         name: u.name,
+        //         passwordHash: await bcrypt.hash(u.password, 10),
+        //     });
+        // }
+        // await User.insertMany(newUsers);
+        const passwordHash = await bcrypt.hash(
+            testHelper.testUsers[0].password,
+            10
+        );
+        const user = new User({
+            username: testHelper.testUsers[0].username,
+            name: testHelper.testUsers[0].name,
+            passwordHash,
+        });
+        await user.save();
+        // const passwordHash2 = await bcrypt.hash(
+        //     testHelper.testUsers[1].password,
+        //     10
+        // );
+        // const user2 = new User({
+        //     username: testHelper.testUsers[1].username,
+        //     name: testHelper.testUsers[1].name,
+        //     passwordHash2,
+        // });
+        // await user2.save();
+        const userLogin = {
+            username: testHelper.testUsers[0].username,
+            password: testHelper.testUsers[0].password,
+        };
+        const result = await api.post('/api/login').send(userLogin);
+        token = result.body.token;
+    });
+
     beforeEach(async () => {
         await Blog.deleteMany({});
-        await Blog.insertMany(testHelper.initialBlogs.map((b) => new Blog(b)));
+        const user = await User.findOne({
+            username: testHelper.testUsers[0].username,
+        });
+        const blogs = testHelper.initialBlogs.map(
+            (b) =>
+                new Blog({
+                    title: b.title,
+                    author: b.author,
+                    url: b.url,
+                    likes: b.likes,
+                    user: user._id,
+                })
+        );
+        await Blog.insertMany(blogs);
+        user.blogs = [...blogs.map((b) => b._id)];
+        await user.save();
     });
 
     describe('blogs-GET', () => {
@@ -47,26 +102,12 @@ describe('/api/blogs/ -route tests', () => {
             url: 'https://cooltestblogs.dev/',
             likes: 11,
         };
-        const newNoLikesBlog = {
-            author: 'Mr. Tester',
-            title: 'The importance of thorough testing',
-            url: 'https://cooltestblogs.dev/',
-        };
-        const newNoTitleBlog = {
-            author: 'Mr. Tester',
-            url: 'https://cooltestblogs.dev/',
-            likes: 11,
-        };
-        const newNoUrlBlog = {
-            author: 'Mr. Tester',
-            title: 'The importance of thorough testing',
-            likes: 11,
-        };
 
         test('should create a new blog correctly', async () => {
             const blogsBeforeAct = await testHelper.getBlogsInDb();
             await api
                 .post('/api/blogs')
+                .set('authorization', `Bearer ${token}`)
                 .send(newBlog)
                 .expect(201)
                 .expect('Content-Type', /application\/json/);
@@ -77,21 +118,65 @@ describe('/api/blogs/ -route tests', () => {
         });
 
         test('should create a new blog without likes', async () => {
+            const blogsBeforeAct = await testHelper.getBlogsInDb();
+            const newNoLikesBlog = {
+                author: 'Mr. Tester',
+                title: 'The importance of thorough testing',
+                url: 'https://cooltestblogs.dev/',
+            };
             const result = await api
                 .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
                 .send(newNoLikesBlog)
                 .expect(201)
                 .expect('Content-Type', /application\/json/);
             expect(result.body.likes).toBeDefined();
             expect(result.body.likes).toBe(0);
+            const blogsAfterAct = await testHelper.getBlogsInDb();
+            expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length + 1);
         });
 
         test('should not create a blog without title', async () => {
-            await api.post('/api/blogs').send(newNoTitleBlog).expect(400);
+            const blogsBeforeAct = await testHelper.getBlogsInDb();
+            const newNoTitleBlog = {
+                author: 'Mr. Tester',
+                url: 'https://cooltestblogs.dev/',
+                likes: 11,
+            };
+            await api
+                .post('/api/blogs')
+                .set('authorization', `Bearer ${token}`)
+                .send(newNoTitleBlog)
+                .expect(400);
+            const blogsAfterAct = await testHelper.getBlogsInDb();
+            expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
         });
 
         test('should not create a blog without url', async () => {
-            await api.post('/api/blogs').send(newNoUrlBlog).expect(400);
+            const blogsBeforeAct = await testHelper.getBlogsInDb();
+            const newNoUrlBlog = {
+                author: 'Mr. Tester',
+                title: 'The importance of thorough testing',
+                likes: 11,
+            };
+            await api
+                .post('/api/blogs')
+                .set('authorization', `Bearer ${token}`)
+                .send(newNoUrlBlog)
+                .expect(400);
+            const blogsAfterAct = await testHelper.getBlogsInDb();
+            expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
+        });
+
+        test('should fail with invalid token', async () => {
+            const blogsBeforeAct = await testHelper.getBlogsInDb();
+            await api
+                .post('/api/blogs')
+                .set('authorization', `Bearer ${token.substring(10)}`)
+                .send(newBlog)
+                .expect(401);
+            const blogsAfterAct = await testHelper.getBlogsInDb();
+            expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
         });
     });
 
@@ -99,7 +184,10 @@ describe('/api/blogs/ -route tests', () => {
         test('should delete blog with valid id', async () => {
             const blogsBeforeAct = await testHelper.getBlogsInDb();
             const deleteBlog = blogsBeforeAct[0];
-            await api.delete(`/api/blogs/${deleteBlog.id}`).expect(204);
+            await api
+                .delete(`/api/blogs/${deleteBlog.id}`)
+                .set('authorization', `Bearer ${token}`)
+                .expect(204);
             const blogsAfterAct = await testHelper.getBlogsInDb();
             expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length - 1);
             const ids = blogsAfterAct.map((b) => b.id);
@@ -107,13 +195,36 @@ describe('/api/blogs/ -route tests', () => {
         });
 
         test('should fail with 404 deleting with non-existing id', async () => {
+            const blogsBeforeAct = await testHelper.getBlogsInDb();
             const nonExistingId = await testHelper.getNonExistingId();
-            await api.delete(`/api/blogs/${nonExistingId}`).expect(404);
+            await api
+                .delete(`/api/blogs/${nonExistingId}`)
+                .set('authorization', `Bearer ${token}`)
+                .expect(404);
+            const blogsAfterAct = await testHelper.getBlogsInDb();
+            expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
         });
 
         test('should fail with 400 deleting with invalid id', async () => {
+            const blogsBeforeAct = await testHelper.getBlogsInDb();
             const invalidId = 'invalidId';
-            await api.delete(`/api/blogs/${invalidId}`).expect(400);
+            await api
+                .delete(`/api/blogs/${invalidId}`)
+                .set('authorization', `Bearer ${token}`)
+                .expect(400);
+            const blogsAfterAct = await testHelper.getBlogsInDb();
+            expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
+        });
+
+        test('should fail with invalid token', async () => {
+            const blogsBeforeAct = await testHelper.getBlogsInDb();
+            const deleteBlog = blogsBeforeAct[0];
+            await api
+                .delete(`/api/blogs/${deleteBlog.id}`)
+                .set('authorization', `Bearer ${token.substring(10)}`)
+                .expect(401);
+            const blogsAfterAct = await testHelper.getBlogsInDb();
+            expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
         });
     });
 
@@ -125,6 +236,7 @@ describe('/api/blogs/ -route tests', () => {
                 const updatedLikes = { likes: 420 };
                 const updatedBlog = await api
                     .put(`/api/blogs/${blogBeforeAct.id}`)
+                    .set('authorization', `Bearer ${token}`)
                     .send(updatedLikes)
                     .expect(200);
                 expect(updatedBlog.body.likes).toEqual(updatedLikes.likes);
@@ -136,6 +248,7 @@ describe('/api/blogs/ -route tests', () => {
                 const updatedTitle = { title: 'Updated blog title.' };
                 const updatedBlog = await api
                     .put(`/api/blogs/${blogBeforeAct.id}`)
+                    .set('authorization', `Bearer ${token}`)
                     .send(updatedTitle)
                     .expect(200);
                 expect(updatedBlog.body.title).toEqual(updatedTitle.title);
@@ -149,6 +262,7 @@ describe('/api/blogs/ -route tests', () => {
                 const updatedAuthor = { author: 'Updated blog author.' };
                 await api
                     .put(`/api/blogs/${blogBeforeAct.id}`)
+                    .set('authorization', `Bearer ${token}`)
                     .send(updatedAuthor)
                     .expect(400);
             });
@@ -158,6 +272,7 @@ describe('/api/blogs/ -route tests', () => {
                 const updatedLikes = { likes: 420 };
                 await api
                     .put(`/api/blogs/${nonExistingId}`)
+                    .set('authorization', `Bearer ${token}`)
                     .send(updatedLikes)
                     .expect(404);
             });
@@ -167,8 +282,21 @@ describe('/api/blogs/ -route tests', () => {
                 const updatedLikes = { likes: 420 };
                 await api
                     .put(`/api/blogs/${invalidId}`)
+                    .set('authorization', `Bearer ${token}`)
                     .send(updatedLikes)
                     .expect(400);
+            });
+
+            test('should fail with invalid token', async () => {
+                const blogs = await testHelper.getBlogsInDb();
+                const blogBeforeAct = blogs[0];
+                const updatedLikes = { likes: 420 };
+                const updatedBlog = await api
+                    .put(`/api/blogs/${blogBeforeAct.id}`)
+                    .set('authorization', `Bearer ${token.substring(10)}`)
+                    .send(updatedLikes)
+                    .expect(401);
+                expect(updatedBlog.body.likes).not.toEqual(updatedLikes.likes);
             });
         });
     });
@@ -178,11 +306,11 @@ describe('/api/users/ -route tests', () => {
     beforeEach(async () => {
         await User.deleteMany({});
         const passwordHash = await bcrypt.hash(
-            testHelper.testUser.password,
+            testHelper.testUsers[0].password,
             10
         );
         const user = new User({
-            username: testHelper.testUser.username,
+            username: testHelper.testUsers[0].username,
             passwordHash,
         });
         await user.save();
@@ -200,7 +328,7 @@ describe('/api/users/ -route tests', () => {
             const result = await api.get('/api/users').expect(200);
             expect(result.body).toHaveLength(1);
             expect(result.body[0].username).toEqual(
-                testHelper.testUser.username
+                testHelper.testUsers[0].username
             );
         });
     });
@@ -279,9 +407,9 @@ describe('/api/users/ -route tests', () => {
         test('should fail adding existing user', async () => {
             const usersBeforeAct = await testHelper.getUsersInDb();
             const existingUser = {
-                username: testHelper.testUser.username,
-                name: testHelper.testUser.name,
-                password: testHelper.testUser.password,
+                username: testHelper.testUsers[0].username,
+                name: testHelper.testUsers[0].name,
+                password: testHelper.testUsers[0].password,
             };
             const result = await api
                 .post('/api/users')
@@ -306,6 +434,38 @@ describe('/api/users/ -route tests', () => {
             const usersAfterAct = await testHelper.getUsersInDb();
             expect(usersAfterAct).toHaveLength(usersBeforeAct.length);
         });
+    });
+});
+
+describe('/api/login/ -route tests', () => {
+    beforeAll(async () => {
+        await User.deleteMany({});
+        const passwordHash = await bcrypt.hash(
+            testHelper.testUsers[0].password,
+            10
+        );
+        const user = new User({
+            username: testHelper.testUsers[0].username,
+            passwordHash,
+        });
+        await user.save();
+    });
+
+    test('should log in succesfully', async () => {
+        const user = {
+            username: testHelper.testUsers[0].username,
+            password: testHelper.testUsers[0].password,
+        };
+        const result = await api.post('/api/login').send(user).expect(200);
+        expect(result.body.token).toBeDefined();
+    });
+
+    test('should not log in succesfully', async () => {
+        const user = {
+            username: 'notauser',
+            password: 'n0Tapa$$rd',
+        };
+        await api.post('/api/login').send(user).expect(401);
     });
 });
 
