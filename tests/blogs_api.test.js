@@ -11,35 +11,14 @@ describe('/api/blogs/ -route tests', () => {
     let token = '';
     beforeAll(async () => {
         await User.deleteMany({});
-        // const newUsers = [];
-        // for (const u of testHelper.testUsers) {
-        //     newUsers.push({
-        //         username: u.username,
-        //         name: u.name,
-        //         passwordHash: await bcrypt.hash(u.password, 10),
-        //     });
-        // }
-        // await User.insertMany(newUsers);
-        const passwordHash = await bcrypt.hash(
-            testHelper.testUsers[0].password,
-            10
-        );
-        const user = new User({
-            username: testHelper.testUsers[0].username,
-            name: testHelper.testUsers[0].name,
-            passwordHash,
-        });
-        await user.save();
-        // const passwordHash2 = await bcrypt.hash(
-        //     testHelper.testUsers[1].password,
-        //     10
-        // );
-        // const user2 = new User({
-        //     username: testHelper.testUsers[1].username,
-        //     name: testHelper.testUsers[1].name,
-        //     passwordHash2,
-        // });
-        // await user2.save();
+        for (const u of testHelper.testUsers) {
+            const user = new User({
+                username: u.username,
+                name: u.name,
+                passwordHash: await bcrypt.hash(u.password, 10),
+            });
+            await user.save();
+        }
         const userLogin = {
             username: testHelper.testUsers[0].username,
             password: testHelper.testUsers[0].password,
@@ -50,22 +29,32 @@ describe('/api/blogs/ -route tests', () => {
 
     beforeEach(async () => {
         await Blog.deleteMany({});
-        const user = await User.findOne({
+        const userOne = await User.findOne({
             username: testHelper.testUsers[0].username,
         });
-        const blogs = testHelper.initialBlogs.map(
-            (b) =>
-                new Blog({
-                    title: b.title,
-                    author: b.author,
-                    url: b.url,
-                    likes: b.likes,
-                    user: user._id,
-                })
-        );
+        const blogs = testHelper.initialBlogs
+            .filter((b) => b.author === 'Tero K.')
+            .map(
+                (b) =>
+                    new Blog({
+                        title: b.title,
+                        author: b.author,
+                        url: b.url,
+                        likes: b.likes,
+                        user: userOne._id,
+                    })
+            );
         await Blog.insertMany(blogs);
-        user.blogs = [...blogs.map((b) => b._id)];
-        await user.save();
+        userOne.blogs = [...blogs.map((b) => b._id)];
+        await userOne.save();
+        const userTwo = await User.findOne({
+            username: testHelper.testUsers[1].username,
+        });
+        const blog = new Blog(testHelper.initialBlogs[3]);
+        blog.user = userTwo._id;
+        await blog.save();
+        userTwo.blogs = [blog._id];
+        await userTwo.save();
     });
 
     describe('blogs-GET', () => {
@@ -87,9 +76,10 @@ describe('/api/blogs/ -route tests', () => {
             expect(titles).toContain(testHelper.initialBlogs[0].title);
         });
 
-        test('should get blogs with id-property', async () => {
+        test('should get blogs with id and user-property', async () => {
             const blogs = await api.get('/api/blogs').expect(200);
             blogs.body.forEach((b) => expect(b.id).toBeDefined());
+            blogs.body.forEach((b) => expect(b.user).toBeDefined());
             blogs.body.forEach((b) => expect(b._id).not.toBeDefined());
             blogs.body.forEach((b) => expect(b.__v).not.toBeDefined());
         });
@@ -226,6 +216,17 @@ describe('/api/blogs/ -route tests', () => {
             const blogsAfterAct = await testHelper.getBlogsInDb();
             expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
         });
+
+        // test('should fail to delete other users blog', async () => {
+        //     const blogsBeforeAct = await testHelper.getBlogsInDb();
+        //     const deleteBlog = blogsBeforeAct.filter(b => b.author === 'Tero E.');
+        //     await api
+        //         .delete(`/api/blogs/${deleteBlog.id}`)
+        //         .set('authorization', `Bearer ${token.substring(10)}`)
+        //         .expect(403);
+        //     const blogsAfterAct = await testHelper.getBlogsInDb();
+        //     expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
+        // });
     });
 
     describe('blogs-PUT', () => {
@@ -331,6 +332,14 @@ describe('/api/users/ -route tests', () => {
                 testHelper.testUsers[0].username
             );
         });
+
+        // test('should have blogs -property', async () => {
+        //     const user = await User.findOne({});
+        //     user.blogs = [await testHelper.getNonExistingId()];
+        //     await user.save();
+        //     const result = await api.get('/api/users').expect(200);
+        //     expect(result.body[0].blogs).toHaveLength(1);
+        // });
     });
 
     describe('users-POST', () => {
