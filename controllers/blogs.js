@@ -1,9 +1,6 @@
 const blogsRouter = require('express').Router();
-const jwt = require('jsonwebtoken');
 require('express-async-errors');
 const Blog = require('../models/blog');
-const User = require('../models/user');
-const logger = require('../utils/logger');
 
 blogsRouter.get('/', async (req, res) => {
     const blogs = await Blog.find({}).populate('user', {
@@ -15,17 +12,13 @@ blogsRouter.get('/', async (req, res) => {
 });
 
 blogsRouter.post('/', async (req, res, next) => {
-    const token = jwt.verify(req.token, process.env.SECRET);
-    if (!token.id) {
-        return res.status(401).json({ error: 'invalid token' });
-    }
     const body = req.body;
     if (!body.title || !body.url) {
         return res
             .status(400)
             .json({ error: 'required properties missing: title, url' });
     }
-    const user = await User.findById(token.id);
+    const user = req.user;
     const blog = new Blog({
         author: body.author,
         user: user._id,
@@ -44,11 +37,7 @@ blogsRouter.delete('/:id', async (req, res, next) => {
     if (!deletedBlog) {
         return res.status(404).end();
     }
-    const token = jwt.verify(req.token, process.env.SECRET);
-    if (!token.id) {
-        return res.status(401).json({ error: 'invalid token' });
-    }
-    if (deletedBlog.user.toString() !== token.id.toString()) {
+    if (deletedBlog.user.toString() !== req.user.id.toString()) {
         return res.status(403).end();
     }
     await Blog.deleteOne({ _id: deletedBlog._id });

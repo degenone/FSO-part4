@@ -1,5 +1,7 @@
 const morgan = require('morgan');
+const jwt = require('jsonwebtoken');
 const { info } = require('./logger');
+const User = require('../models/user');
 
 morgan.token('body', (req) => {
     const body = req.body;
@@ -25,16 +27,34 @@ const errorHandler = (e, req, res, next) => {
     next(e);
 };
 
-const tokenHelper = (req, res, next) => {
+const tokenHelper = (req) => {
     const auth = req.get('authorization');
     if (auth && auth.startsWith('Bearer ')) {
-        req.token = auth.replace('Bearer ', '');
+        return auth.replace('Bearer ', '');
     }
+    return null
+}
+
+const tokenExtractor = (req, res, next) => {
+    req.token = tokenHelper(req);
     next();
 };
+
+const userExtractor = async (req, res, next) => {
+    const token = tokenHelper(req);
+    if (token !== null) {
+        const decodedToken = jwt.verify(token, process.env.SECRET);
+        if (!decodedToken.id) {
+            return res.status(401).json({ error: 'invalid token' });
+        }
+        req.user = await User.findById(decodedToken.id);
+    }
+    next();
+}
 
 module.exports = {
     requestLogger,
     errorHandler,
-    tokenHelper,
+    tokenExtractor,
+    userExtractor,
 };
