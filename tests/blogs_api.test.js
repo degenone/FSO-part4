@@ -93,7 +93,7 @@ describe('/api/blogs/ -route tests', () => {
             likes: 11,
         };
 
-        test('should create a new blog correctly', async () => {
+        test('should create a new blog successfully', async () => {
             const blogsBeforeAct = await testHelper.getBlogsInDb();
             await api
                 .post('/api/blogs')
@@ -184,7 +184,7 @@ describe('/api/blogs/ -route tests', () => {
             expect(ids).not.toContain(deleteBlog.id);
         });
 
-        test('should fail with 404 deleting with non-existing id', async () => {
+        test('should fail with non-existing id', async () => {
             const blogsBeforeAct = await testHelper.getBlogsInDb();
             const nonExistingId = await testHelper.getNonExistingId();
             await api
@@ -195,7 +195,7 @@ describe('/api/blogs/ -route tests', () => {
             expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
         });
 
-        test('should fail with 400 deleting with invalid id', async () => {
+        test('should fail with invalid id', async () => {
             const blogsBeforeAct = await testHelper.getBlogsInDb();
             const invalidId = 'invalidId';
             await api
@@ -217,16 +217,16 @@ describe('/api/blogs/ -route tests', () => {
             expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
         });
 
-        // test('should fail to delete other users blog', async () => {
-        //     const blogsBeforeAct = await testHelper.getBlogsInDb();
-        //     const deleteBlog = blogsBeforeAct.filter(b => b.author === 'Tero E.');
-        //     await api
-        //         .delete(`/api/blogs/${deleteBlog.id}`)
-        //         .set('authorization', `Bearer ${token.substring(10)}`)
-        //         .expect(403);
-        //     const blogsAfterAct = await testHelper.getBlogsInDb();
-        //     expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
-        // });
+        test('should fail to delete other users blog', async () => {
+            const blogsBeforeAct = await testHelper.getBlogsInDb();
+            const deleteBlog = await Blog.findOne({ author: 'Tero E.' });
+            await api
+                .delete(`/api/blogs/${deleteBlog.id}`)
+                .set('authorization', `Bearer ${token}`)
+                .expect(403);
+            const blogsAfterAct = await testHelper.getBlogsInDb();
+            expect(blogsAfterAct).toHaveLength(blogsBeforeAct.length);
+        });
     });
 
     describe('blogs-PUT', () => {
@@ -299,6 +299,17 @@ describe('/api/blogs/ -route tests', () => {
                     .expect(401);
                 expect(updatedBlog.body.likes).not.toEqual(updatedLikes.likes);
             });
+
+            test('should fail updating other users blog', async () => {
+                const blogs = await testHelper.getBlogsInDb();
+                const blog = blogs.find((b) => b.author === 'Tero E.');
+                const updatedLikes = { likes: 420 };
+                await api
+                    .put(`/api/blogs/${blog.id}`)
+                    .set('authorization', `Bearer ${token}`)
+                    .send(updatedLikes)
+                    .expect(403);
+            });
         });
     });
 });
@@ -333,13 +344,21 @@ describe('/api/users/ -route tests', () => {
             );
         });
 
-        // test('should have blogs -property', async () => {
-        //     const user = await User.findOne({});
-        //     user.blogs = [await testHelper.getNonExistingId()];
-        //     await user.save();
-        //     const result = await api.get('/api/users').expect(200);
-        //     expect(result.body[0].blogs).toHaveLength(1);
-        // });
+        test('should have blogs -property', async () => {
+            const user = await User.findOne({});
+            const blog = new Blog({
+                author: 'Jake Johnson',
+                title: 'Test test tesT',
+                url: 'https://example.com/blog/1',
+                likes: 1,
+                user: user.id,
+            });
+            await blog.save();
+            user.blogs = [blog._id];
+            await user.save();
+            const result = await api.get('/api/users').expect(200);
+            expect(result.body[0].blogs).toHaveLength(1);
+        });
     });
 
     describe('users-POST', () => {
