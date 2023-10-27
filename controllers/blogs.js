@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 require('express-async-errors');
 const Blog = require('../models/blog');
 const User = require('../models/user');
+const logger = require('../utils/logger');
 
 blogsRouter.get('/', async (req, res) => {
     const blogs = await Blog.find({}).populate('user', {
@@ -39,12 +40,19 @@ blogsRouter.post('/', async (req, res, next) => {
 });
 
 blogsRouter.delete('/:id', async (req, res, next) => {
-    const deletedBlog = await Blog.findByIdAndDelete(req.params.id);
-    if (deletedBlog) {
-        res.status(204).end();
-    } else {
-        res.status(404).end();
+    const deletedBlog = await Blog.findById(req.params.id);
+    if (!deletedBlog) {
+        return res.status(404).end();
     }
+    const token = jwt.verify(req.token, process.env.SECRET);
+    if (!token.id) {
+        return res.status(401).json({ error: 'invalid token' });
+    }
+    if (deletedBlog.user.toString() !== token.id.toString()) {
+        return res.status(403).end();
+    }
+    await Blog.deleteOne({ _id: deletedBlog._id });
+    res.status(204).end();
 });
 
 blogsRouter.put('/:id', async (req, res, next) => {

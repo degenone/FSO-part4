@@ -25,6 +25,9 @@ POST http://localhost:3003/api/login/ HTTP/1.1
 Content-Type: application/json
 
 {
-    "username": "DegenOne",
+    "username": "testuser",
     "password": "salasanA|123"
 }
+###
+DELETE http://localhost:3003/api/blogs/653aa251dd9204a4d60a89b3 HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWQiOiI2NTNhNzQ5YjI0ZjAxNzcxODMyODdlMWMiLCJpYXQiOjE2OTgzOTkyNzcsImV4cCI6MTY5ODQwMjg3N30.nAPUo7w2fyOs_ozXj0DazSzjROW1ZbdgOqLoF3uR4hA
