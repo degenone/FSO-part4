@@ -300,14 +300,14 @@ describe('/api/blogs/ -route tests', () => {
                 expect(updatedBlog.body.likes).not.toEqual(updatedLikes.likes);
             });
 
-            test('should fail updating other users blog', async () => {
+            test('should fail updating other users blog title', async () => {
                 const blogs = await testHelper.getBlogsInDb();
                 const blog = blogs.find((b) => b.author === 'Tero E.');
-                const updatedLikes = { likes: 420 };
+                const updatedTitle = { title: 'new title' };
                 await api
                     .put(`/api/blogs/${blog.id}`)
                     .set('authorization', `Bearer ${token}`)
-                    .send(updatedLikes)
+                    .send(updatedTitle)
                     .expect(403);
             });
         });

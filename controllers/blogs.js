@@ -53,11 +53,13 @@ blogsRouter.put('/:id', async (req, res, next) => {
     if (!blogToUpdate) {
         return res.status(404).end();
     }
-    if (blogToUpdate.user.toString() !== req.user._id.toString()) {
-        return res.status(403).end();
+    if (title) {
+        if (blogToUpdate.user.toString() !== req.user._id.toString()) {
+            return res.status(403).end();
+        }
+        blogToUpdate.title = title;
     }
-    blogToUpdate.title = title;
-    blogToUpdate.likes = likes;
+    blogToUpdate.likes = likes || blogToUpdate.likes;
     await blogToUpdate.save();
     res.json(blogToUpdate);
 });
