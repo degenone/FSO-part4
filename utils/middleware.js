@@ -41,14 +41,12 @@ const tokenExtractor = (req, res, next) => {
 };
 
 const userExtractor = async (req, res, next) => {
-    if (req.method !== 'GET') {
-        const token = tokenHelper(req);
-        const decodedToken = jwt.verify(token, process.env.SECRET);
-        if (!decodedToken.id) {
-            return res.status(401).json({ error: 'invalid token' });
-        }
-        req.user = await User.findById(decodedToken.id);
+    const token = tokenHelper(req);
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    if (!decodedToken.id) {
+        return res.status(401).json({ error: 'invalid token' });
     }
+    req.user = await User.findById(decodedToken.id);
     next();
 };
 

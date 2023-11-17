@@ -1,6 +1,7 @@
 const blogsRouter = require('express').Router();
 require('express-async-errors');
 const Blog = require('../models/blog');
+const middleware = require('../utils/middleware');
 
 blogsRouter.get('/', async (req, res) => {
     const blogs = await Blog.find({}).populate('user', {
@@ -8,10 +9,11 @@ blogsRouter.get('/', async (req, res) => {
         name: 1,
         id: 1,
     });
+    // .populate('comments', { comment: 1 });
     res.json(blogs);
 });
 
-blogsRouter.post('/', async (req, res, next) => {
+blogsRouter.post('/', middleware.userExtractor, async (req, res, next) => {
     const body = req.body;
     if (!body.title || !body.url) {
         return res
@@ -32,7 +34,7 @@ blogsRouter.post('/', async (req, res, next) => {
     res.status(201).json(newBlog);
 });
 
-blogsRouter.delete('/:id', async (req, res, next) => {
+blogsRouter.delete('/:id', middleware.userExtractor, async (req, res, next) => {
     const deletedBlog = await Blog.findById(req.params.id);
     if (!deletedBlog) {
         return res.status(404).end();
@@ -44,7 +46,7 @@ blogsRouter.delete('/:id', async (req, res, next) => {
     res.status(204).end();
 });
 
-blogsRouter.put('/:id', async (req, res, next) => {
+blogsRouter.put('/:id', middleware.userExtractor, async (req, res, next) => {
     const { likes, title } = req.body;
     if (!likes && !title) {
         return res.status(400).end();
