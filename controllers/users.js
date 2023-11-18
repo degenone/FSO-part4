@@ -1,8 +1,8 @@
 const usersRouter = require('express').Router();
+require('express-async-errors');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const passwordValidation = require('../utils/passwordValidation');
-const { info } = require('../utils/logger');
 
 usersRouter.get('/', async (req, res, next) => {
     const users = await User.find({}).populate('blogs', {

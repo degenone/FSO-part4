@@ -1,4 +1,5 @@
 const testingRouter = require('express').Router();
+require('express-async-errors');
 const Blog = require('../models/blog');
 const User = require('../models/user');
 

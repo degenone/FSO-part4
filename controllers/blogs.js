@@ -9,8 +9,28 @@ blogsRouter.get('/', async (req, res) => {
         name: 1,
         id: 1,
     });
-    // .populate('comments', { comment: 1 });
     res.json(blogs);
+});
+
+blogsRouter.post('/:id/comments', async (req, res, next) => {
+    const { comment } = req.body;
+    if (!comment) {
+        return res
+            .status(400)
+            .json({ error: 'required property missing: comment' });
+    }
+    if (comment.length < 3) {
+        return res
+            .status(400)
+            .json({ error: 'comment must be at least 3 characters long' });
+    }
+    const blog = await Blog.findByIdAndUpdate(req.params.id, {
+        $push: { comments: comment },
+    });
+    if (blog) {
+        res.status(201).end();
+    }
+    res.status(404).end();
 });
 
 blogsRouter.post('/', middleware.userExtractor, async (req, res, next) => {
